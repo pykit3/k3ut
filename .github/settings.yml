@@ -1,0 +1,7 @@
+_extends: gh-config
+
+
+repository:
+  description: unittest util
+  homepage: https://blog.openacid.com
+  topics: unittest, logging, timer
