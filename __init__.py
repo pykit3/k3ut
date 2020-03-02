@@ -6,14 +6,15 @@ import inspect
 import logging
 import os
 import socket
+import sys
 import time
 import unittest
 
 _glb = {
-    'unittest_logger': None,
+    'pykitut_logger': None,
 }
 
-debug_to_stdout = os.environ.get('UT_DEBUG') == '1'
+debug_to_stderr = os.environ.get('UT_DEBUG') == '1'
 
 
 # TODO make this configurable
@@ -60,7 +61,7 @@ class ContextFilter(logging.Filter):
 
         for i, (frame, path, ln, func, line, xx) in enumerate(stack):
 
-            if (frame.f_globals.get('__name__') == 'pykit.ututil'
+            if (frame.f_globals.get('__name__') == 'pykitut'
                     and func == 'dd'):
 
                 # this frame is dd(), find the caller
@@ -79,28 +80,59 @@ class ContextFilter(logging.Filter):
 
 def _init():
 
-    if _glb['unittest_logger'] is not None:
+    if _glb['pykitut_logger'] is not None:
         return
 
-    # test_logutil might require this module and logutil is still under test!
-    try:
-        from pykit import logutil
-        logger = logutil.make_logger(
-            '/tmp',
-            log_name='unittest',
-            level='DEBUG',
-            fmt=('[%(asctime)s'
-                 ' %(_fn)s:%(_ln)d'
-                 ' %(levelname)s]'
-                 ' %(message)s'
-                 )
-        )
+    log_name = "pykitut"
+    lvl = "DEBUG"
+    base_dir = "/tmp"
+    log_fn = log_name + '.out'
+
+    logger = logging.getLogger(log_name)
+    logger.setLevel(lvl)
+
+    # do not add 2 handlers to one logger by default
+    if len(logger.handlers) == 0:
+
+        log_path = os.path.join(base_dir, log_fn)
+        fmt = ('['
+               '%(asctime)s'
+               ' %(process)d-%(thread)d'
+               ' %(_fn)s:%(_ln)d'
+               ' %(_func)s'
+               ']'
+               ' %(levelname)s'
+               ' %(message)s'
+               )
+        datefmt = '%H:%M:%S'
+
+        fh = logging.FileHandler(log_path)
+        fh.setFormatter(logging.Formatter(fmt=fmt, datefmt=datefmt))
+        logger.addHandler(fh)
+
         logger.addFilter(ContextFilter())
 
-        _glb['unittest_logger'] = logger
+        if debug_to_stderr:
 
-    except Exception as e:
-        print(repr(e) + ' while init root logger')
+            fmt = ('['
+                   '%(asctime)s'
+                   ' %(process)d-%(thread)d'
+                   ' %(_fn)s:%(_ln)d'
+                   ' %(_func)s'
+                   ']'
+                   ' %(levelname)s'
+                   '\n'
+                   '%(message)s'
+                   )
+
+            stream = sys.stderr
+            stdhandler = logging.StreamHandler(stream)
+            stdhandler.setFormatter(logging.Formatter(fmt=fmt, datefmt=datefmt))
+            stdhandler.setLevel(lvl)
+
+            logger.addHandler(stdhandler)
+
+    _glb['pykitut_logger'] = logger
 
 
 def dd(*msg):
@@ -116,14 +148,9 @@ def dd(*msg):
 
     _init()
 
-    l = _glb['unittest_logger']
+    l = _glb['pykitut_logger']
     if l:
         l.debug(s)
-
-    if not debug_to_stdout:
-        return
-
-    print(s)
 
 
 def get_ut_verbosity():
@@ -193,18 +220,21 @@ def wait_listening(ip, port, timeout=15, interval=0.5):
 
     # Wait at most `timeout` second for a tcp listening service to serve.
 
+    laste = None
     for ii in range(40):
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             sock.connect((ip, port))
             break
-        except socket.error:
+        except socket.error as e:
             dd('trying to connect to {0} failed'.format(str((ip, port))))
             sock.close()
             time.sleep(.4)
+            laste = e
     else:
-        raise
+        raise laste
+
 
 def has_env(kv):
 
