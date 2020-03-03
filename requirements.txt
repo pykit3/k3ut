@@ -1,0 +1,3 @@
+setuptools
+PyYAML==4.2b4
+requirements-parser
