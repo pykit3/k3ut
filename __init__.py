@@ -242,3 +242,7 @@ def has_env(kv):
 
     k, v = kv.split('=', 1)
     return os.environ.get(k) == v
+
+
+def pyver():
+    return sys.version
