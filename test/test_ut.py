@@ -1,8 +1,8 @@
 import unittest
 
-import pykit3ut
+import pk3ut
 
-dd = pykit3ut.dd
+dd = pk3ut.dd
 
 
 class TestProcError(unittest.TestCase):
