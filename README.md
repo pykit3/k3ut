@@ -1,8 +1,8 @@
 # pk3ut
 
-Unittest util functions for [pykit3] packages.
-
 [![Build Status](https://travis-ci.com/pykit3/pk3ut.svg?branch=master)](https://travis-ci.com/pykit3/pk3ut)
+
+Unittest util functions for [pykit3] packages.
 
 You do not need this repo unless you are a pykit3 developer.
 
