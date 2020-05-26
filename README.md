@@ -1,6 +1,6 @@
-# pk3ut
+# k3ut
 
-[![Build Status](https://travis-ci.com/pykit3/pk3ut.svg?branch=master)](https://travis-ci.com/pykit3/pk3ut)
+[![Build Status](https://travis-ci.com/pykit3/k3ut.svg?branch=master)](https://travis-ci.com/pykit3/k3ut)
 
 Unittest util functions for [pykit3] packages.
 

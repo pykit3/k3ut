@@ -1,8 +1,8 @@
 import unittest
 
-import pk3ut
+import k3ut
 
-dd = pk3ut.dd
+dd = k3ut.dd
 
 
 class TestProcError(unittest.TestCase):
