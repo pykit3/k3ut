@@ -3,7 +3,7 @@ import setuptools
 setuptools.setup(
     name="k3ut",
     packages=["k3ut"],
-    version="0.1.13",
+    version="0.1.14",
     license='MIT',
     description='unittest util',
     long_description='# k3ut\n\n[![Build Status](https://travis-ci.com/pykit3/k3ut.svg?branch=master)](https://travis-ci.com/pykit3/k3ut)\n[![Documentation Status](https://readthedocs.org/projects/k3ut/badge/?version=stable)](https://k3ut.readthedocs.io/en/stable/?badge=stable)\n[![Package](https://img.shields.io/pypi/pyversions/k3ut)](https://pypi.org/project/k3ut)\n\nunittest util\n\nk3ut is a component of [pykit3] project: a python3 toolkit set.\n\n\n# Install\n\n```\npip install k3ut\n```\n\n# Synopsis\n\n```python\n\n```\n\n#   Author\n\nZhang Yanpo (张炎泼) <drdr.xp@gmail.com>\n\n#   Copyright and License\n\nThe MIT License (MIT)\n\nCopyright (c) 2015 Zhang Yanpo (张炎泼) <drdr.xp@gmail.com>\n\n\n[pykit3]: https://github.com/pykit3',
