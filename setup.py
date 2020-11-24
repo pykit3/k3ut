@@ -2,7 +2,7 @@
 import setuptools
 setuptools.setup(
     name="k3ut",
-    packages=["."],
+    packages=["k3ut"],
     version="0.1.8",
     license='MIT',
     description='unittest util',
