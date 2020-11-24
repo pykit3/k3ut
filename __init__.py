@@ -16,7 +16,7 @@ _glb = {
 
 debug_to_stderr = os.environ.get('UT_DEBUG') == '1'
 
-__version__ = '0.1.13'
+__version__ = '0.1.14'
 __name__ = 'k3ut'
 
 
