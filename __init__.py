@@ -9,6 +9,9 @@ import socket
 import sys
 import time
 import unittest
+import tempfile
+
+tmpdir = tempfile.gettempdir()
 
 _glb = {
     'pykitut_logger': None,
@@ -88,7 +91,7 @@ def _init():
 
     log_name = "pykitut"
     lvl = "DEBUG"
-    base_dir = "/tmp"
+    base_dir = tmpdir
     log_fn = log_name + '.out'
 
     logger = logging.getLogger(log_name)
