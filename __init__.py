@@ -7,20 +7,20 @@ import logging
 import os
 import socket
 import sys
+import tempfile
 import time
 import unittest
-import tempfile
+from importlib.metadata import version
+
+__version__ = version("k3ut")
 
 tmpdir = tempfile.gettempdir()
 
 _glb = {
-    'pykitut_logger': None,
+    "pykitut_logger": None,
 }
 
-debug_to_stderr = os.environ.get('UT_DEBUG') == '1'
-
-__version__ = '0.1.15'
-__name__ = 'k3ut'
+debug_to_stderr = os.environ.get("UT_DEBUG") == "1"
 
 
 # TODO make this configurable
@@ -34,7 +34,6 @@ __name__ = 'k3ut'
 
 
 class Timer(object):
-
     def __init__(self):
         self.start = None
         self.end = None
@@ -51,7 +50,6 @@ class Timer(object):
 
 
 class ContextFilter(logging.Filter):
-
     """
     Add correct func, line number, line info to log record.
 
@@ -61,15 +59,11 @@ class ContextFilter(logging.Filter):
     """
 
     def filter(self, record):
-
         # skip this function
         stack = inspect.stack()[1:]
 
         for i, (frame, path, ln, func, line, xx) in enumerate(stack):
-
-            if (frame.f_globals.get('__name__') == 'pykitut'
-                    and func == 'dd'):
-
+            if frame.f_globals.get("__name__") == "pykitut" and func == "dd":
                 # this frame is dd(), find the caller
                 _, path, ln, func, line, xx = stack[i + 1]
 
@@ -85,32 +79,22 @@ class ContextFilter(logging.Filter):
 
 
 def _init():
-
-    if _glb['pykitut_logger'] is not None:
+    if _glb["pykitut_logger"] is not None:
         return
 
     log_name = "pykitut"
     lvl = "DEBUG"
     base_dir = tmpdir
-    log_fn = log_name + '.out'
+    log_fn = log_name + ".out"
 
     logger = logging.getLogger(log_name)
     logger.setLevel(lvl)
 
     # do not add 2 handlers to one logger by default
     if len(logger.handlers) == 0:
-
         log_path = os.path.join(base_dir, log_fn)
-        fmt = ('['
-               '%(asctime)s'
-               ' %(process)d-%(thread)d'
-               ' %(_fn)s:%(_ln)d'
-               ' %(_func)s'
-               ']'
-               ' %(levelname)s'
-               ' %(message)s'
-               )
-        datefmt = '%H:%M:%S'
+        fmt = "[%(asctime)s %(process)d-%(thread)d %(_fn)s:%(_ln)d %(_func)s] %(levelname)s %(message)s"
+        datefmt = "%H:%M:%S"
 
         fh = logging.FileHandler(log_path)
         fh.setFormatter(logging.Formatter(fmt=fmt, datefmt=datefmt))
@@ -119,17 +103,7 @@ def _init():
         logger.addFilter(ContextFilter())
 
         if debug_to_stderr:
-
-            fmt = ('['
-                   '%(asctime)s'
-                   ' %(process)d-%(thread)d'
-                   ' %(_fn)s:%(_ln)d'
-                   ' %(_func)s'
-                   ']'
-                   ' %(levelname)s'
-                   '\n'
-                   '%(message)s'
-                   )
+            fmt = "[%(asctime)s %(process)d-%(thread)d %(_fn)s:%(_ln)d %(_func)s] %(levelname)s\n%(message)s"
 
             stream = sys.stderr
             stdhandler = logging.StreamHandler(stream)
@@ -138,7 +112,7 @@ def _init():
 
             logger.addHandler(stdhandler)
 
-    _glb['pykitut_logger'] = logger
+    _glb["pykitut_logger"] = logger
 
 
 def dd(*msg):
@@ -149,14 +123,13 @@ def dd(*msg):
     And dd always write log to log file in /tmp dir.
     """
 
-    s = ' '.join([str(x)
-                  for x in msg])
+    s = " ".join([str(x) for x in msg])
 
     _init()
 
-    l = _glb['pykitut_logger']
-    if l:
-        l.debug(s)
+    logger = _glb["pykitut_logger"]
+    if logger:
+        logger.debug(s)
 
 
 def get_ut_verbosity():
@@ -169,7 +142,7 @@ def get_ut_verbosity():
     if frame is None:
         return 0
 
-    self = frame.f_locals.get('self')
+    self = frame.f_locals.get("self")
 
     return self.verbosity
 
@@ -186,13 +159,13 @@ def get_case_logger():
 
     frame = _find_frame_by_self(unittest.TestCase)
 
-    self = frame.f_locals.get('self')
+    self = frame.f_locals.get("self")
 
-    module_name = frame.f_globals.get('__name__')
+    module_name = frame.f_globals.get("__name__")
     class_name = self.__class__.__name__
     func_name = frame.f_code.co_name
 
-    nm = module_name + '.' + class_name + '.' + func_name
+    nm = module_name + "." + class_name + "." + func_name
 
     logger = logging.getLogger(nm)
     for f in logger.filters:
@@ -213,7 +186,7 @@ def _find_frame_by_self(clz):
     frame = inspect.currentframe()
 
     while frame:
-        self = frame.f_locals.get('self')
+        self = frame.f_locals.get("self")
         if isinstance(self, clz):
             return frame
 
@@ -223,7 +196,6 @@ def _find_frame_by_self(clz):
 
 
 def wait_listening(ip, port, timeout=15, interval=0.5):
-
     # Wait at most `timeout` second for a tcp listening service to serve.
 
     laste = None
@@ -234,19 +206,18 @@ def wait_listening(ip, port, timeout=15, interval=0.5):
             sock.connect((ip, port))
             break
         except socket.error as e:
-            dd('trying to connect to {0} failed'.format(str((ip, port))))
+            dd("trying to connect to {0} failed".format(str((ip, port))))
             sock.close()
-            time.sleep(.4)
+            time.sleep(0.4)
             laste = e
     else:
         raise laste
 
 
 def has_env(kv):
-
     # kv: KEY=value
 
-    k, v = kv.split('=', 1)
+    k, v = kv.split("=", 1)
     return os.environ.get(k) == v
 
 
