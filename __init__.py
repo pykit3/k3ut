@@ -33,7 +33,7 @@ debug_to_stderr = os.environ.get("UT_DEBUG") == "1"
 # logger.setLevel('INFO')
 
 
-class Timer(object):
+class Timer:
     def __init__(self):
         self.start = None
         self.end = None
@@ -65,7 +65,7 @@ class ContextFilter(logging.Filter):
         for i, (frame, path, ln, func, line, xx) in enumerate(stack):
             if frame.f_globals.get("__name__") == "pykitut" and func == "dd":
                 # this frame is dd(), find the caller
-                _, path, ln, func, line, xx = stack[i + 1]
+                _, path, ln, func, _line, _xx = stack[i + 1]
 
                 record._fn = os.path.basename(path)
                 record._ln = ln
@@ -205,8 +205,8 @@ def wait_listening(ip, port, timeout=15, interval=0.5):
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             sock.connect((ip, port))
             break
-        except socket.error as e:
-            dd("trying to connect to {0} failed".format(str((ip, port))))
+        except OSError as e:
+            dd(f"trying to connect to {(ip, port)!s} failed")
             sock.close()
             time.sleep(0.4)
             laste = e
