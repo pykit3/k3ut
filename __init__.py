@@ -63,7 +63,7 @@ class ContextFilter(logging.Filter):
         stack = inspect.stack()[1:]
 
         for i, (frame, path, ln, func, line, xx) in enumerate(stack):
-            if frame.f_globals.get("__name__") == "pykitut" and func == "dd":
+            if frame.f_globals.get("__name__") == __name__ and func == "dd":
                 # this frame is dd(), find the caller
                 _, path, ln, func, _line, _xx = stack[i + 1]
 
