@@ -199,16 +199,17 @@ def wait_listening(ip, port, timeout=15, interval=0.5):
     # Wait at most `timeout` second for a tcp listening service to serve.
 
     laste = None
-    for ii in range(40):
+    for ii in range(max(1, int(timeout / interval))):
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             sock.connect((ip, port))
+            sock.close()
             break
         except OSError as e:
             dd(f"trying to connect to {(ip, port)!s} failed")
             sock.close()
-            time.sleep(0.4)
+            time.sleep(interval)
             laste = e
     else:
         raise laste
