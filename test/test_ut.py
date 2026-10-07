@@ -44,6 +44,37 @@ class TestWaitListening(unittest.TestCase):
 
         self.assertLess(spent, 2)
 
+    def test_wait_listening_gives_up_on_a_hanging_connect(self):
+        # When the accept queue is full, the kernel drops a new SYN, so connect() hangs.
+        srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        srv.bind(("127.0.0.1", 0))
+        srv.listen(1)
+        port = srv.getsockname()[1]
+
+        clients = []
+        for _ in range(100):
+            c = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            c.settimeout(0.2)
+            try:
+                c.connect(("127.0.0.1", port))
+            except TimeoutError:
+                c.close()
+                break
+            clients.append(c)
+        else:
+            self.fail("the accept queue never filled")
+
+        t0 = time.time()
+        with self.assertRaises(TimeoutError):
+            k3ut.wait_listening("127.0.0.1", port, timeout=0.5, interval=0.1)
+        spent = time.time() - t0
+
+        for c in clients:
+            c.close()
+        srv.close()
+
+        self.assertLess(spent, 2)
+
     def test_wait_listening_closes_its_socket(self):
         srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         srv.bind(("127.0.0.1", 0))
