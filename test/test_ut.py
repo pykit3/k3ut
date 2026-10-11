@@ -107,6 +107,28 @@ class TestWaitListening(unittest.TestCase):
         self.assertEqual(24, ctx.exception.errno)
         self.assertGreater(socket_cls.call_count, 1)
 
+    def test_wait_listening_connects_after_a_refusal(self):
+        sock = mock.MagicMock()
+        sock.__enter__.return_value = sock
+        sock.connect.side_effect = [ConnectionRefusedError(61, "Connection refused"), None]
+
+        with mock.patch("socket.socket", return_value=sock):
+            k3ut.wait_listening("127.0.0.1", 1, timeout=1, interval=0.01)
+
+        self.assertEqual([mock.call(("127.0.0.1", 1))] * 2, sock.connect.call_args_list)
+
+    def test_wait_listening_closes_the_socket_when_setsockopt_fails(self):
+        sock = mock.MagicMock()
+        sock.__enter__.return_value = sock
+        sock.setsockopt.side_effect = OSError(22, "Invalid argument")
+
+        with mock.patch("socket.socket", return_value=sock), self.assertRaises(OSError) as ctx:
+            k3ut.wait_listening("127.0.0.1", 1, timeout=0.05, interval=0.01)
+
+        self.assertEqual(22, ctx.exception.errno)
+        self.assertEqual(0, sock.connect.call_count)
+        self.assertEqual(sock.setsockopt.call_count, sock.__exit__.call_count)
+
     def test_wait_listening_closes_its_socket(self):
         srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         srv.bind(("127.0.0.1", 0))
