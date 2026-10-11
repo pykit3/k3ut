@@ -56,18 +56,20 @@ class ContextFilter(logging.Filter):
     """
 
     def filter(self, record):
-        # skip this function
-        stack = inspect.stack()[1:]
+        # Walk up only to dd(), skipping this function: inspect.stack() would also read the source of every frame.
+        frame = inspect.currentframe().f_back
 
-        for i, (frame, path, ln, func, line, xx) in enumerate(stack):
-            if frame.f_globals.get("__name__") == __name__ and func == "dd":
+        while frame is not None:
+            if frame.f_globals.get("__name__") == __name__ and frame.f_code.co_name == "dd":
                 # this frame is dd(), find the caller
-                _, path, ln, func, _line, _xx = stack[i + 1]
+                caller = frame.f_back
 
-                record._fn = os.path.basename(path)
-                record._ln = ln
-                record._func = func
+                record._fn = os.path.basename(caller.f_code.co_filename)
+                record._ln = caller.f_lineno
+                record._func = caller.f_code.co_name
                 return True
+
+            frame = frame.f_back
 
         record._fn = record.filename
         record._ln = record.lineno
