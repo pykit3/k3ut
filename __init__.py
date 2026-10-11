@@ -201,18 +201,16 @@ def wait_listening(ip, port, timeout=15, interval=0.5):
     deadline = time.monotonic() + timeout
     while True:
         try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            # A connect() to a target that drops the SYN blocks for the OS connect timeout. So it gets the time left,
-            # but at least 1 ms, because a timeout of 0 would make the socket non-blocking.
-            remaining = deadline - time.monotonic()
-            sock.settimeout(max(remaining, 0.001))
-            sock.connect((ip, port))
-            sock.close()
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                # A connect() to a target that drops the SYN blocks for the OS connect timeout. So it gets the time
+                # left, but at least 1 ms, because a timeout of 0 would make the socket non-blocking.
+                remaining = deadline - time.monotonic()
+                sock.settimeout(max(remaining, 0.001))
+                sock.connect((ip, port))
             return
         except OSError:
             dd(f"trying to connect to {(ip, port)!s} failed")
-            sock.close()
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 raise

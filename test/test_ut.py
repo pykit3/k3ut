@@ -78,7 +78,8 @@ class TestWaitListening(unittest.TestCase):
 
     def test_wait_listening_bounds_each_wait_by_timeout(self):
         # interval is longer than timeout, so the time left must bound both connect() and the sleep after it.
-        sock = mock.Mock()
+        sock = mock.MagicMock()
+        sock.__enter__.return_value = sock
         sock.connect.side_effect = TimeoutError("timed out")
 
         t0 = time.monotonic()
@@ -94,6 +95,17 @@ class TestWaitListening(unittest.TestCase):
         for interval in (0, -1):
             with self.assertRaises(ValueError):
                 k3ut.wait_listening("127.0.0.1", 1, timeout=0.05, interval=interval)
+
+    def test_wait_listening_retries_a_failed_socket(self):
+        # socket() fails when the process runs out of file descriptors.
+        with (
+            mock.patch("socket.socket", side_effect=OSError(24, "Too many open files")) as socket_cls,
+            self.assertRaises(OSError) as ctx,
+        ):
+            k3ut.wait_listening("127.0.0.1", 1, timeout=0.05, interval=0.01)
+
+        self.assertEqual(24, ctx.exception.errno)
+        self.assertGreater(socket_cls.call_count, 1)
 
     def test_wait_listening_closes_its_socket(self):
         srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
