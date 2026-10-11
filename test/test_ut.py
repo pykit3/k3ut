@@ -3,6 +3,7 @@ import socket
 import time
 import unittest
 import warnings
+from unittest import mock
 
 import k3ut
 
@@ -74,6 +75,25 @@ class TestWaitListening(unittest.TestCase):
         srv.close()
 
         self.assertLess(spent, 2)
+
+    def test_wait_listening_bounds_each_wait_by_timeout(self):
+        # interval is longer than timeout, so the time left must bound both connect() and the sleep after it.
+        sock = mock.Mock()
+        sock.connect.side_effect = TimeoutError("timed out")
+
+        t0 = time.monotonic()
+        with mock.patch("socket.socket", return_value=sock), self.assertRaises(TimeoutError):
+            k3ut.wait_listening("127.0.0.1", 1, timeout=0.05, interval=1)
+        spent = time.monotonic() - t0
+
+        first_timeout = sock.settimeout.call_args_list[0].args[0]
+        self.assertLessEqual(first_timeout, 0.05)
+        self.assertLess(spent, 0.5)
+
+    def test_wait_listening_rejects_a_nonpositive_interval(self):
+        for interval in (0, -1):
+            with self.assertRaises(ValueError):
+                k3ut.wait_listening("127.0.0.1", 1, timeout=0.05, interval=interval)
 
     def test_wait_listening_closes_its_socket(self):
         srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

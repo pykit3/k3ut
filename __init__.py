@@ -195,24 +195,28 @@ def _find_frame_by_self(clz):
 def wait_listening(ip, port, timeout=15, interval=0.5):
     # Wait at most `timeout` second for a tcp listening service to serve.
 
+    if interval <= 0:
+        raise ValueError(f"interval must be positive: {interval!r}")
+
     deadline = time.monotonic() + timeout
     while True:
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             # A connect() to a target that drops the SYN blocks for the OS connect timeout. So it gets the time left,
-            # but at least `interval`, because a timeout of 0 would make the socket non-blocking.
+            # but at least 1 ms, because a timeout of 0 would make the socket non-blocking.
             remaining = deadline - time.monotonic()
-            sock.settimeout(max(remaining, interval))
+            sock.settimeout(max(remaining, 0.001))
             sock.connect((ip, port))
             sock.close()
             return
         except OSError:
             dd(f"trying to connect to {(ip, port)!s} failed")
             sock.close()
-            if time.monotonic() >= deadline:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
                 raise
-            time.sleep(interval)
+            time.sleep(min(interval, remaining))
 
 
 def has_env(kv):
